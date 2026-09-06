@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+openai
+PyPDF2
+beautifulsoup4
+selenium
+pydantic
+xhtml2pdf
+markdown

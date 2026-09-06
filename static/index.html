@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resume Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-title">
+      <h1>Resume Desk</h1>
+      <p class="subtitle">Paste a job posting, upload your resume, see exactly where it falls short.</p>
+    </div>
+    <button id="download-pdf-btn" class="btn btn-secondary hidden">Download PDF summary</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ INPUT PANEL ============ -->
+  <section class="panel" aria-label="Inputs">
+
+    <div class="panel-block">
+      <label for="jd-url" class="field-label">Job posting URL</label>
+      <input id="jd-url" type="url" placeholder="https://www.linkedin.com/jobs/view/..." />
+      <button id="fetch-jd-btn" class="btn btn-primary">Fetch job description</button>
+      <p class="hint">Scraped live with a headless browser. Some sites (LinkedIn especially) may block this — if it fails, try a different posting or a company's own careers page.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="panel-block">
+      <label for="resume-file" class="field-label">Your resume (PDF)</label>
+      <div class="file-drop" id="file-drop">
+        <input id="resume-file" type="file" accept="application/pdf" />
+        <span id="file-drop-label">Choose a file or drop it here</span>
+      </div>
+      <button id="analyze-btn" class="btn btn-primary" disabled>Analyze against job description</button>
+      <p class="hint" id="analyze-hint">Fetch a job description first, or paste one in below.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="panel-block">
+      <label for="jd-manual" class="field-label">Or paste the job description directly</label>
+      <textarea id="jd-manual" rows="5" placeholder="Paste role, responsibilities, requirements..."></textarea>
+    </div>
+
+  </section>
+
+  <!-- ============ DOCUMENT PANE ============ -->
+  <section class="document" aria-label="Results">
+
+    <article id="jd-doc" class="doc-block hidden">
+      <div class="doc-heading">
+        <span class="doc-tab">Job Posting</span>
+        <h2>Extracted description</h2>
+      </div>
+      <div id="jd-content" class="doc-content"></div>
+    </article>
+
+    <article id="analysis-doc" class="doc-block hidden">
+      <div class="doc-heading">
+        <span class="doc-tab doc-tab-flag">Analysis</span>
+        <h2>Gaps &amp; suggested improvements</h2>
+      </div>
+      <div id="analysis-content" class="doc-content margin-notes"></div>
+    </article>
+
+    <div id="empty-state" class="empty-state">
+      <p>Nothing to review yet.</p>
+      <p class="empty-sub">Fetch a job description on the left, then upload your resume to see the gap analysis here.</p>
+    </div>
+
+  </section>
+
+</main>
+
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
