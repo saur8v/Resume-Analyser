@@ -1,89 +1,217 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Resume Desk</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4efe6" />
+  <title>resumedesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=DM+Sans:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-<header class="masthead">
-  <div class="masthead-inner">
-    <div class="masthead-title">
-      <h1>Resume Desk</h1>
-      <p class="subtitle">Paste a job posting, upload your resume, see exactly where it falls short.</p>
-    </div>
-    <button id="download-pdf-btn" class="btn btn-secondary hidden">Download PDF summary</button>
+  <!-- ============ Sign in / create account ============ -->
+  <div id="auth-screen" class="auth hidden">
+    <section class="auth-desk" aria-label="What resumedesk does">
+      <span class="wordmark wordmark-lg">resume<em>desk</em></span>
+      <h1 class="auth-headline">Your resume, marked up against the job you actually want.</h1>
+      <div class="desk-scene">
+        <figure class="desk-sheet" aria-label="Example of a resume marked up against a job posting">
+          <div class="desk-sheet-head">
+            <span class="desk-sheet-name">Priya Shah</span>
+            <span>Data Analyst · Pune · priya@example.com</span>
+          </div>
+          <span class="desk-sheet-label">EXPERIENCE</span>
+          <div class="desk-sheet-lines">
+            <strong>Analyst, Northwind Retail · 2023 – now</strong>
+            <span>• Built weekly sales dashboards in Power BI for 40 stores.</span>
+            <span>• <mark>Cut report prep from two days to two hours with Python automation.</mark></span>
+            <span>• Presented findings to regional managers each quarter.</span>
+          </div>
+          <span class="desk-sheet-label">SKILLS</span>
+          <p class="desk-sheet-text">Excel, Power BI, Python, <s>MS Office</s>, statistics</p>
+        </figure>
+        <p class="pen-note desk-note-1">Strong. Move this to the top.</p>
+        <p class="pen-note desk-note-2">No mention of SQL. The role asks for it twice.</p>
+        <p class="pen-note desk-note-3">…and we'll never ask you to claim experience you don't have.</p>
+      </div>
+    </section>
+    <section class="auth-sheet" aria-labelledby="auth-title">
+      <form id="auth-form" class="auth-form" novalidate>
+        <h2 id="auth-title">Sign in to your desk</h2>
+        <div id="name-field" class="field hidden"><label for="auth-name">Full name</label><input id="auth-name" type="text" autocomplete="name" maxlength="120" /></div>
+        <div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required /></div>
+        <div class="field">
+          <label for="auth-password">Password</label>
+          <div class="password-wrap">
+            <input id="auth-password" type="password" autocomplete="current-password" minlength="8" required />
+            <button id="password-toggle" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+          </div>
+          <p id="password-hint" class="hint hidden">At least 8 characters.</p>
+        </div>
+        <button id="auth-submit" class="btn btn-primary btn-lg" type="submit">Sign in</button>
+        <button id="auth-switch" class="quiet-link" type="button">Create account</button>
+      </form>
+    </section>
   </div>
-</header>
 
-<main class="layout">
+  <!-- ============ App ============ -->
+  <div id="app-shell" class="shell hidden">
+    <aside class="sidebar" aria-label="Navigation">
+      <button id="brand-btn" class="wordmark brand-button" type="button" aria-label="resumedesk, new analysis">resume<em>desk</em></button>
 
-  <!-- ============ INPUT PANEL ============ -->
-  <section class="panel" aria-label="Inputs">
-
-    <div class="panel-block">
-      <label for="jd-url" class="field-label">Job posting URL</label>
-      <input id="jd-url" type="url" placeholder="https://www.linkedin.com/jobs/view/..." />
-      <button id="fetch-jd-btn" class="btn btn-primary">Fetch job description</button>
-      <p class="hint">Scraped live with a headless browser. Some sites (LinkedIn especially) may block this — if it fails, try a different posting or a company's own careers page.</p>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="panel-block">
-      <label for="resume-file" class="field-label">Your resume (PDF)</label>
-      <div class="file-drop" id="file-drop">
-        <input id="resume-file" type="file" accept="application/pdf" />
-        <span id="file-drop-label">Choose a file or drop it here</span>
+      <!-- Shown everywhere except the profile page -->
+      <div id="sidebar-history" class="sidebar-block">
+        <button id="new-analysis-btn" class="btn btn-primary btn-block" type="button"><span data-icon="plus"></span> New analysis</button>
+        <div class="history-search">
+          <label for="history-search">YOUR ANALYSES · <span id="history-count">0</span></label>
+          <input id="history-search" type="search" placeholder="Search by company or role" autocomplete="off" />
+        </div>
+        <nav id="history-list" class="history-list" aria-label="Previous analyses"></nav>
+        <p id="history-empty" class="history-empty">Your analyses will appear here.</p>
       </div>
-      <button id="analyze-btn" class="btn btn-primary" disabled>Analyze against job description</button>
-      <p class="hint" id="analyze-hint">Fetch a job description first, or paste one in below.</p>
-    </div>
 
-    <div class="divider"></div>
-
-    <div class="panel-block">
-      <label for="jd-manual" class="field-label">Or paste the job description directly</label>
-      <textarea id="jd-manual" rows="5" placeholder="Paste role, responsibilities, requirements..."></textarea>
-    </div>
-
-  </section>
-
-  <!-- ============ DOCUMENT PANE ============ -->
-  <section class="document" aria-label="Results">
-
-    <article id="jd-doc" class="doc-block hidden">
-      <div class="doc-heading">
-        <span class="doc-tab">Job Posting</span>
-        <h2>Extracted description</h2>
+      <!-- Shown on the profile page instead -->
+      <div id="sidebar-profile" class="sidebar-block hidden">
+        <button id="back-to-analyses-btn" class="btn btn-secondary btn-block btn-left" type="button"><span data-icon="back"></span> Back to analyses</button>
+        <nav aria-labelledby="profile-nav-label" class="stack-2">
+          <span id="profile-nav-label" class="sidebar-label">YOUR PROFILE</span>
+          <div id="profile-nav-links" class="profile-nav-links"></div>
+        </nav>
+        <section class="tips-card" aria-labelledby="tips-title">
+          <h2 id="tips-title">Make analyses sharper</h2>
+          <ul id="profile-tips" class="tips"></ul>
+        </section>
       </div>
-      <div id="jd-content" class="doc-content"></div>
-    </article>
+    </aside>
 
-    <article id="analysis-doc" class="doc-block hidden">
-      <div class="doc-heading">
-        <span class="doc-tab doc-tab-flag">Analysis</span>
-        <h2>Gaps &amp; suggested improvements</h2>
-      </div>
-      <div id="analysis-content" class="doc-content margin-notes"></div>
-    </article>
+    <div class="main">
+      <header class="topbar">
+        <nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb"></nav>
+        <div class="account-menu">
+          <button id="avatar-btn" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="account-dropdown" aria-label="Account menu"><span id="avatar-initials" aria-hidden="true"></span></button>
+          <div id="account-dropdown" class="account-dropdown hidden" role="menu" aria-labelledby="avatar-btn">
+            <div class="account-dropdown-head"><strong id="account-name"></strong><span id="user-email"></span></div>
+            <button id="profile-nav-btn" class="account-dropdown-item" type="button" role="menuitem"><span data-icon="user"></span> My profile</button>
+            <button id="logout-btn" class="account-dropdown-item danger" type="button" role="menuitem"><span data-icon="logout"></span> Sign out</button>
+          </div>
+        </div>
+      </header>
 
-    <div id="empty-state" class="empty-state">
-      <p>Nothing to review yet.</p>
-      <p class="empty-sub">Fetch a job description on the left, then upload your resume to see the gap analysis here.</p>
+      <main class="content">
+        <!-- New analysis -->
+        <section id="view-analysis" class="view view-narrow hidden" aria-labelledby="new-title">
+          <div class="stack-18">
+            <div class="stack-6">
+              <h1 id="new-title" class="page-title">Which <mark>role</mark> are you looking at?</h1>
+              <p class="lede">Paste a job link. We'll mark up your profile against it and show you where you stand.</p>
+            </div>
+            <div id="empty-profile-note" class="notice hidden">
+              <span>Your profile is empty, so there's nothing to compare yet.</span>
+              <button id="setup-profile-btn" class="btn btn-secondary" type="button">Set up profile</button>
+            </div>
+            <div class="card card-pad-lg stack-14">
+              <label for="jd-url" class="label">Job posting URL</label>
+              <div class="url-row">
+                <input id="jd-url" class="input-lg" type="url" placeholder="https://company.com/careers/role" autocomplete="url" aria-describedby="jd-url-error" />
+                <button id="analyze-btn" class="btn btn-primary btn-lg" type="button" disabled>Analyse <span data-icon="arrow"></span></button>
+              </div>
+              <p id="jd-url-error" class="field-error hidden" role="alert"></p>
+              <details id="paste-details" class="paste-details">
+                <summary>Site blocks scraping? Paste the description instead</summary>
+                <div class="field">
+                  <label for="jd-manual">Job description</label>
+                  <textarea id="jd-manual" rows="7" placeholder="Paste the role, responsibilities and requirements…"></textarea>
+                  <p class="hint">If you fill in both, the pasted description is used.</p>
+                </div>
+              </details>
+              <div id="progress-state" class="progress hidden" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><div><strong id="progress-title">Preparing analysis</strong><span id="progress-detail">This may take a moment…</span></div></div>
+            </div>
+            <p class="pen-note pen-note-inline">We'll never ask you to claim experience you don't have.</p>
+          </div>
+
+          <section id="recent-section" class="stack-14 hidden" aria-labelledby="recent-title">
+            <h2 id="recent-title" class="section-title">Recent analyses</h2>
+            <div id="recent-grid" class="recent-grid"></div>
+          </section>
+        </section>
+
+        <!-- Analysis report -->
+        <section id="view-results" class="view hidden" aria-labelledby="result-role">
+          <div class="result-header">
+            <div class="stack-6 min-0">
+              <span id="result-kicker" class="kicker"></span>
+              <h1 id="result-role" class="page-title"></h1>
+              <span id="result-meta" class="muted"></span>
+            </div>
+            <div class="result-actions">
+              <a id="open-posting-link" class="btn btn-secondary hidden" href="#" target="_blank" rel="noopener noreferrer"><span data-icon="external"></span> Open posting</a>
+              <button id="download-pdf-btn" class="btn btn-primary" type="button"><span data-icon="download"></span> Download PDF</button>
+            </div>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Report sections">
+            <button id="analysis-tab-btn" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="analysis-panel">Analysis</button>
+            <button id="markup-tab-btn" class="tab" type="button" role="tab" aria-selected="false" aria-controls="markup-panel">Marked-up resume</button>
+            <button id="jd-tab-btn" class="tab" type="button" role="tab" aria-selected="false" aria-controls="jd-panel">Job description</button>
+          </div>
+
+          <div class="result-layout">
+            <div class="result-main">
+              <article id="analysis-panel" class="card card-pad-lg markdown" role="tabpanel" aria-labelledby="analysis-tab-btn"></article>
+              <article id="markup-panel" class="markup hidden" role="tabpanel" aria-labelledby="markup-tab-btn"></article>
+              <article id="jd-panel" class="card card-pad-lg markdown hidden" role="tabpanel" aria-labelledby="jd-tab-btn"></article>
+            </div>
+            <aside class="result-aside" aria-label="Role details">
+              <section id="glance-card" class="card card-pad stack-12 hidden" aria-labelledby="glance-title">
+                <h2 id="glance-title" class="card-title">At a glance</h2>
+                <dl id="glance-list" class="glance-list"></dl>
+              </section>
+              <section id="skills-card" class="card card-pad stack-8 hidden" aria-labelledby="skills-title">
+                <h2 id="skills-title" class="card-title">Key skills for this role</h2>
+                <span class="chip-label">On your profile</span>
+                <div id="skills-matched" class="chips"></div>
+                <span class="chip-label chip-label-gap">Not shown yet</span>
+                <div id="skills-missing" class="chips"></div>
+                <button id="skills-toggle" class="link-button skills-toggle hidden" type="button" aria-expanded="false" aria-controls="skills-matched skills-missing">Show all skills</button>
+              </section>
+              <button id="delete-analysis-btn" class="link-button danger" type="button">Delete this analysis</button>
+            </aside>
+          </div>
+        </section>
+
+        <!-- Profile -->
+        <section id="view-profile" class="view view-profile hidden" aria-labelledby="profile-name">
+          <div id="profile-main" class="profile-main"></div>
+        </section>
+      </main>
     </div>
+  </div>
 
-  </section>
+  <!-- ============ Side panel (edit one item / view JSON) ============ -->
+  <div id="drawer-root" class="drawer-root hidden">
+    <div id="drawer-scrim" class="drawer-scrim"></div>
+    <section id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <header class="drawer-head">
+        <div><span id="drawer-kicker" class="kicker"></span><h2 id="drawer-title"></h2></div>
+        <button id="drawer-close" class="icon-button icon-button-filled" type="button" aria-label="Close"><span data-icon="close"></span></button>
+      </header>
+      <form id="drawer-body" class="drawer-body" novalidate></form>
+      <footer class="drawer-foot">
+        <button id="drawer-remove" class="link-button danger hidden" type="button">Remove</button>
+        <div class="drawer-foot-actions">
+          <button id="drawer-cancel" class="btn btn-secondary" type="button">Cancel</button>
+          <button id="drawer-save" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </footer>
+    </section>
+  </div>
 
-</main>
-
-<div id="toast-container" class="toast-container" aria-live="polite"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="app.js"></script>
+  <input id="resume-file" class="hidden" type="file" accept="application/pdf,.pdf" />
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

@@ -1,16 +1,24 @@
 # Resume Desk
 
-A dashboard for the resume analyser & improver: fetch a job posting, upload
-your resume, and get a gap analysis with concrete suggestions.
+A dashboard for the resume analyser & improver. Create an account, save your
+professional profile once (auto-filled from your resume), then paste any job
+posting URL to get a gap analysis with concrete suggestions. Every analysis is
+saved to your history.
 
 ## Project structure
 
 ```
-resume-dashboard/
-├── main.py              # FastAPI app: /api/job-description, /api/analyze, serves static/
-├── resume_analyzer.py   # Your original logic, refactored into importable functions
+Resume_Analyser/
+├── main.py              # FastAPI app: auth, profile, job description, analyses; serves static/
+├── auth.py              # Email + password auth (scrypt hashes, HttpOnly session cookie)
+├── db.py                # SQLite storage: users, sessions, profiles, analysis history
+├── profile_schema.py    # Pydantic schema for the structured profile JSON
+├── profile_merge.py     # Merges a re-uploaded resume into the existing profile
+├── tests/               # python -m unittest discover tests
+├── resume_analyzer.py   # Scraping, resume -> JSON parsing, LLM analysis
+├── pdf_export.py        # PDF report export
 ├── requirements.txt
-├── .env.example
+├── data/                # Created on first run; holds resume_desk.db (git-ignored)
 └── static/
     ├── index.html
     ├── style.css
@@ -19,55 +27,64 @@ resume-dashboard/
 
 ## Setup
 
-1. **Install Chrome + chromedriver** (needed for Selenium — same as your original script).
-   Selenium Manager (bundled with recent `selenium` versions) will usually
-   download the matching driver automatically the first time it runs.
+1. **Install Chrome + chromedriver** (needed for Selenium). Selenium Manager
+   usually downloads the matching driver automatically the first time it runs.
 
 2. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Set your API key:**
-   ```bash
-   cp .env.example .env
-   # then edit .env and paste your GOOGLE_API_KEY
+3. **Set your API key** in `.env`:
    ```
+   OPENAI_API_KEY=sk-...
+   ```
+   Optional: `RESUME_DESK_DB` to change the database path, and `COOKIE_SECURE=1`
+   when serving over HTTPS.
 
 4. **Run the server:**
    ```bash
    uvicorn main:app --reload
    ```
 
-5. Open **http://127.0.0.1:8000** in your browser.
+5. Open **http://127.0.0.1:8000**, create an account, and set up your profile.
 
 ## How it works
 
-- **Fetch job description** — sends the URL to `/api/job-description`, which
-  runs your Selenium scraper + Gemini extraction exactly as before, and
-  returns markdown that's rendered in the "Job Posting" panel.
-- **Analyze against job description** — uploads the PDF as `multipart/form-data`
-  to `/api/analyze`, which extracts resume text in memory (no temp files),
-  runs the same Gemini comparison prompt, and renders the markdown result
-  in the "Analysis" panel.
-- You can also skip the scraper entirely and paste a job description directly
-  into the textarea on the left — the "Analyze" button accepts either source.
+- **Profile.** Uploading a resume PDF extracts its text and asks the
+  extraction model to convert it into the structured JSON defined in
+  `profile_schema.py` (strict structured output). You then review and edit it
+  in the profile form, and can add *additional context* that isn't on your
+  resume. The "View profile JSON" panel shows exactly what is sent to the LLM.
+- **Re-uploading a resume merges, never replaces.** The new resume is parsed
+  on its own, then merged into your profile in code (`profile_merge.py`):
+  fields you edited by hand are kept, fields that came from the last resume
+  are updated, new entries are added, entries missing from the new resume are
+  kept, and entries you deleted aren't brought back. To tell hand edits from
+  resume data, the app stores what it parsed from your last resume. The upload
+  message lists what changed, and **Undo last upload** restores the previous
+  profile and PDF (one level, and only until you edit the profile again).
+- **Reliable updates.** Every write (form save or resume upload) is validated
+  against the schema, stored in a single SQLite transaction, and versioned.
+  Saving with an out-of-date version (e.g. from a second tab) is rejected with
+  a 409 instead of silently overwriting newer data.
+- **Analysis.** You paste a job posting URL (or the description text). It is
+  scraped and structured, then compared against your saved profile JSON.
+- **History.** Each analysis stores the job description, the report, and a
+  snapshot of the profile used, so old reports stay accurate after you edit
+  your profile.
+- **Marked-up resume.** Each report has a "Marked-up resume" tab: the profile
+  snapshot laid out as a resume, with yellow highlights for what already works
+  for the role and red-pen notes for what to fix. It uses no LLM call: the
+  skills match supplies verified quotes, and simple rules in
+  `resume_markup.py` catch weak openers, missing numbers, first person, long
+  bullets, missing links and more.
+- **PDF report.** The download matches the web design (fonts bundled in
+  `fonts/`, OFL-licensed) and contains the analysis, the marked-up resume and
+  the job description.
 
 ## Known limitation: LinkedIn scraping
 
 LinkedIn (and some other job boards) actively block headless/automated
-browsers with logins, captchas, or rate limits. If a URL fails to scrape:
-- Try a company's own careers page instead, which is usually more permissive.
-- Or just paste the job description text directly into the textarea —
-  the analysis step works the same either way.
-
-## Notes on this refactor
-
-- `resume_analyzer.py` is your original script's logic, split into functions
-  that take/return data (bytes, strings) instead of file paths and `print()`,
-  so it can be called from a web request.
-- `extract_text_from_pdf_bytes()` is new — it lets the API read the uploaded
-  file straight from memory rather than needing it saved to disk first.
-  `extract_text_from_pdf()` (the original, path-based version) is still there
-  if you want to keep using this as a CLI script too.
-- Nothing about your prompts, model choice, or Selenium config was changed.
+browsers with logins, captchas, or rate limits. If a URL fails to scrape, try
+the company's own careers page, or paste the job description text directly.

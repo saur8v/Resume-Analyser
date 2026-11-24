@@ -1,6 +1,9 @@
 # Secrets
 .env
 
+# Local database (user accounts, profiles, resumes)
+data/
+
 # Virtual environments
 .venv/
 venv/
